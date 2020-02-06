@@ -13,6 +13,7 @@ use FOS\RestBundle\Controller\FOSRestController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use FOS\RestBundle\Request\ParamFetcherInterface;
+use Symfony\Component\HttpFoundation\Request;
 
 class ShopController extends FOSRestController
 {
@@ -71,4 +72,21 @@ class ShopController extends FOSRestController
 		} while ($i <= $size);
 		return new Response('CREATED / UPDATED SHOPS', Response::HTTP_CREATED);
     }
+	
+	/**
+     * @Rest\Delete("v2/shops/{id}", name="app_shop_delete")
+     */
+    public function deleteAction($id, Request $request)
+	{
+		$em = $this->getDoctrine()->getManager();
+		$shop = $em->getRepository('AppBundle:Shop')->find($id); //afin de récupérer le id_shop !
+		
+		if (empty($shop)) {
+            return new Response('SHOP NOT FOUND', Response::HTTP_NOT_FOUND);
+        } else {
+			$em->remove($shop);
+			$em->flush();
+			return new Response('SHOP DELETED', Response::HTTP_OK);
+		}
+	}
 }

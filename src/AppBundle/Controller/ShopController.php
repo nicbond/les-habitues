@@ -89,4 +89,21 @@ class ShopController extends FOSRestController
 			return new Response('SHOP DELETED', Response::HTTP_OK);
 		}
 	}
+	
+	/**
+     * @Rest\Post(
+     *    path = "v2/shops",
+     *    name = "app_shops_create"
+     * )
+     * @Rest\View(StatusCode = 201)
+     * @ParamConverter("shop", converter="fos_rest.request_body")
+     */
+    public function createShopAction(Shop $shop)
+    {
+		$em = $this->getDoctrine()->getManager();
+        $em->persist($shop);
+        $em->flush();
+		
+		return $shop;
+    }
 }

@@ -30,6 +30,29 @@ class ShopController extends FOSRestController
 		$ctx = stream_context_create($opts);
 		$requete = file_get_contents($url,false,$ctx);
 		$datas = json_decode($requete,true);
-		var_dump($datas);die;
+
+		$size = count($datas['data']);
+		$size = $size-1;
+		
+		$em = $this->getDoctrine()->getManager();
+		
+		$i = 0;
+
+		do {
+			$shop = new Shop();
+			$shop->setNameShop($datas['data'][$i]['chain']);
+			$shop->setAdress($datas['data'][$i]['localisations'][0]['address']);
+			$shop->setZipCode($datas['data'][$i]['localisations'][0]['zipcode']);
+			$shop->setCity($datas['data'][$i]['localisations'][0]['city']);
+			$shop->setImage($datas['data'][$i]['picture_url']);
+			$shop->setOffer($datas['data'][$i]['offers'][0]['reduction']);
+			$shop->setIdShop($datas['data'][$i]['objectID']);
+			
+			$em->persist($shop);
+			$em->flush();
+			
+			$i++;
+		} while ($i <= $size);
+		return new Response('CREATED SHOPS', Response::HTTP_CREATED);
     }
 }

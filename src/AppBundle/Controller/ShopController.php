@@ -106,4 +106,41 @@ class ShopController extends FOSRestController
 		
 		return $shop;
     }
+	
+	/**
+     * @Rest\Put("v2/shops/{id}", name="app_shop_update")
+     */
+	public function updateAction($id, Request $request)
+	{
+		$data = json_decode($request->getContent());
+		$em = $this->getDoctrine()->getManager();
+
+		$shop = $em->getRepository('AppBundle:Shop')->find($id);
+		
+		if (empty($shop)) {
+            return new Response('SHOP NOT FOUND', Response::HTTP_NOT_FOUND);
+        } else {	
+			if (!empty($data->name_shop)){
+				$shop->setNameShop($data->name_shop);
+			}	
+			if (!empty($data->adress)){
+				$shop->setAdress($data->adress);
+			}
+			if (!empty($data->zip_code)){
+				$shop->setZipCode($data->zip_code);
+			}
+			if (!empty($data->city)){
+				$shop->setCity($data->city);
+			}
+			if (!empty($data->image)){
+				$shop->setImage($data->image);
+			}
+			if (!empty($data->offer)){
+				$shop->setOffer($data->offer);
+			}
+			$em->merge($shop);
+			$em->flush();
+			return new Response('SHOP UPDATED', Response::HTTP_OK);
+		}
+	}
 }

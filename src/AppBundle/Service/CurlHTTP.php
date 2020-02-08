@@ -35,16 +35,17 @@ class CurlHTTP
         $this->entityManager = $entityManager; 
     }
 	
-	public function curlPost(\AppBundle\Entity\Shop $shop, $url, $data = NULL, $headers = NULL)
+	public function curlPost(\AppBundle\Entity\Shop $shop, $url, $data = NULL)
 	{		
 		$method = 'POST';
 		
 		$ch = curl_init();
 		curl_setopt($ch, CURLOPT_URL, $url);
 		
-		if (!empty($headers)) {
-			curl_setopt($ch, CURLOPT_HTTPHEADER, true)
-		}
+		curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+                                            'Content-Type: application/json',
+                                            'Connection: Keep-Alive'
+                                            ));
 		
 		curl_setopt($ch, CURLOPT_POST, true);
 		curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
@@ -64,20 +65,47 @@ class CurlHTTP
 		return $response;
 	}
 	
-	public function curlDelete(\AppBundle\Entity\Shop $shop, $url, $data = NULL, $headers = NULL)
+	public function curlDelete(\AppBundle\Entity\Shop $shop, $url, $data = NULL)
 	{
 		$method = 'DELETE';
 		
 		$ch = curl_init();
 		curl_setopt($ch, CURLOPT_URL, $url);
 		
-		if (!empty($headers)) {
-			curl_setopt($ch, CURLOPT_HTTPHEADER, true)
-		}
-		
 		curl_setopt($ch, CURLOPT_CUSTOMREQUEST,'DELETE');
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 		
+		$request = curl_exec($ch);
+		$error = curl_error($ch);
+		$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+		curl_close($ch);
+    
+		if ($error !== '') {
+			throw new \Exception($error);
+		}
+		
+		$response = $this->getHttpCode(\AppBundle\Entity\Shop $shop, $httpCode, $request, $method);
+		
+		return $response;
+	}
+	
+	public function curlUpdate(\AppBundle\Entity\Shop $shop, $url, $data = NULL)
+	{
+		$method = 'UPDATE';
+		
+		$ch = curl_init();
+		curl_setopt($ch, CURLOPT_URL, $url);
+		
+		curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+                                            'Content-Type: application/json',
+                                            'Connection: Keep-Alive'
+                                            ));
+		}
+
+		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
+		curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
 		$request = curl_exec($ch);
 		$error = curl_error($ch);
 		$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);

@@ -28,7 +28,6 @@ class CurlHTTP
     /**
      *
      * @param EntityManager $entityManager
-     * @param TransactionValidators $validators
      */
     public function __construct(Container $container, EntityManager $entityManager)
     {
@@ -65,18 +64,50 @@ class CurlHTTP
 		return $response;
 	}
 	
-	public function getHttpCode($httpCode, $request, $method)
+	public function curlDelete(\AppBundle\Entity\Shop $shop, $url, $data = NULL, $headers = NULL)
+	{
+		$method = 'DELETE';
+		
+		$ch = curl_init();
+		curl_setopt($ch, CURLOPT_URL, $url);
+		
+		if (!empty($headers)) {
+			curl_setopt($ch, CURLOPT_HTTPHEADER, true)
+		}
+		
+		curl_setopt($ch, CURLOPT_CUSTOMREQUEST,'DELETE');
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+		
+		$request = curl_exec($ch);
+		$error = curl_error($ch);
+		$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+		curl_close($ch);
+    
+		if ($error !== '') {
+			throw new \Exception($error);
+		}
+		
+		$response = $this->getHttpCode(\AppBundle\Entity\Shop $shop, $httpCode, $request, $method);
+		
+		return $response;
+	}
+	
+	public function getHttpCode(\AppBundle\Entity\Shop $shop, $httpCode, $request, $method)
     {	
 		$data = json_decode($request);
 		$response = null;
 		
 		switch ($httpCode) {
 			case 200:
+				if ($method == 'DELETE') {
+						$this->entityManager->remove($shop);
+						$this->entityManager->flush();
+					}
 				$response = new Response('ACTION ON SHOP SUCCEED', Response::HTTP_OK);
 				break;
 			case 201:
 				if ($method == 'POST') {
-						//Ici je recupérerai l'id_shop de votre base de données.
+						//C'est ici je pense que je recupérerai l'id_shop de votre base de données.
 						$shop->setIdShop($data['data'][0]['objectID']);
 						$this->entityManager->merge($shop);
 						$this->entityManager->flush();

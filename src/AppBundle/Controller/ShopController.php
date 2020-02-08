@@ -143,6 +143,9 @@ class ShopController extends FOSRestController
 		switch ($httpCode) {
 			case 200:
 				break;
+			case 201:
+				$response = new Response('SHOP CREATED OR UPDATED', Response::HTTP_CREATED);
+				break;
 			case 404:
 				$response = new Response('API NOT FOUND', Response::HTTP_NOT_FOUND);
 				break;
@@ -160,7 +163,6 @@ class ShopController extends FOSRestController
 			//$shop->setIdShop($datas['data'][0]['objectID']);
 			$em->merge($shop);
 			$em->flush();
-			$response = new Response('SHOP CREATED', Response::HTTP_CREATED);
 		} else {
 			$em->remove($shop);
 			$em->flush();

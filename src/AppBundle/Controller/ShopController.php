@@ -95,16 +95,48 @@ class ShopController extends FOSRestController
      *    path = "v2/shops",
      *    name = "app_shops_create"
      * )
-     * @Rest\View(StatusCode = 201)
      * @ParamConverter("shop", converter="fos_rest.request_body")
      */
-    public function createShopAction(Shop $shop)
+    public function createShopAction(Shop $shop, Request $request)
     {
+		$data = $request->getContent();
+		$url = 'url non donnée';
+		
 		$em = $this->getDoctrine()->getManager();
         $em->persist($shop);
         $em->flush();
 		
-		return $shop;
+		$ch = curl_init();
+		curl_setopt($ch, CURLOPT_URL, $url);
+		curl_setopt($ch, CURLOPT_HEADER, true);
+		curl_setopt($ch, CURLOPT_POST, true);
+		curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+		
+		$head = curl_exec($ch);
+		$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+		
+		//Decode and display the output
+		$json_output = json_decode($head);
+		$result = $json_output?$json_output:$head;
+		print_r($result, true);
+		curl_close($ch);
+		
+		if (!$head) {
+			$response = new Response('', Response::HTTP_INTERNAL_SERVER_ERROR);
+		}
+		
+		if ($httpCode < 400) {
+			// ici je récupére votre id_shop et je ferai un merge de mon entité déjà créé.
+			$em->merge($shop);
+			$em->flush();
+			$response = new Response('SHOP CREATED', Response::HTTP_CREATED);
+		} else {
+			$em->remove($shop);
+			$em->flush();
+			$response = new Response('', Response::HTTP_INTERNAL_SERVER_ERROR);
+		}
+		return $response;
     }
 	
 	/**

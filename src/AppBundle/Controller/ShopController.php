@@ -113,21 +113,37 @@ class ShopController extends FOSRestController
 		curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 		
-		$head = curl_exec($ch);
+		$response = curl_exec($ch);
+		$datas = json_decode($response);
 		$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 		
-		//Decode and display the output
-		$json_output = json_decode($head);
-		$result = $json_output?$json_output:$head;
-		print_r($result, true);
-		curl_close($ch);
-		
-		if (!$head) {
-			$response = new Response('', Response::HTTP_INTERNAL_SERVER_ERROR);
+		switch ($httpCode) {
+			case 200:
+				$error_status = "200: Success";
+				return ($datas);
+				break;
+			case 404:
+				$error_status = "404: API Not found";
+				break;
+			case 500:
+				$error_status = "500: servers replied with an error.";
+				break;
+			case 502:
+				$error_status = "502: servers may be down or being upgraded. Hopefully they'll be OK soon!";
+				break;
+			case 503:
+				$error_status = "503: service unavailable. Hopefully they'll be OK soon!";
+				break;
+			default:
+				$error_status = "Undocumented error: " . $httpCode . " : " . curl_error($curl);
+				break;
 		}
+		curl_close($curl);
+		//echo $error_status;
+		//die;
 		
 		if ($httpCode < 400) {
-			// ici je récupére votre id_shop et je ferai un merge de mon entité déjà créé.
+			// ici je récupére votre id_shop dans les datas et je ferai un merge de mon entité déjà créé.
 			$em->merge($shop);
 			$em->flush();
 			$response = new Response('SHOP CREATED', Response::HTTP_CREATED);
@@ -137,6 +153,7 @@ class ShopController extends FOSRestController
 			$response = new Response('', Response::HTTP_INTERNAL_SERVER_ERROR);
 		}
 		return $response;
+		
     }
 	
 	/**

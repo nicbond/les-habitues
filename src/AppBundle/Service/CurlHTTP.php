@@ -36,6 +36,33 @@ class CurlHTTP
         $this->entityManager = $entityManager; 
     }
 	
+	public function curlPost(\AppBundle\Entity\Shop $shop, $url, $data = NULL, $headers = NULL)
+	{		
+		$ch = curl_init();
+		curl_setopt($ch, CURLOPT_URL, $url);
+		
+		if (!empty($headers)) {
+			curl_setopt($ch, CURLOPT_HTTPHEADER, true)
+		}
+		
+		curl_setopt($ch, CURLOPT_POST, true);
+		curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+		
+		$request = curl_exec($ch);
+		$error = curl_error($ch);
+		$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+		curl_close($ch);
+    
+		if ($error !== '') {
+			throw new \Exception($error);
+		}
+		
+		$response = $this->getHttpCode($httpCode, $request);
+
+		return $response;
+	}
+	
 	public function getHttpCode($httpCode, $request)
     {	
 		$response = null;

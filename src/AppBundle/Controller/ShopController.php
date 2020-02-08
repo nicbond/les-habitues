@@ -82,12 +82,35 @@ class ShopController extends FOSRestController
 		$shop = $em->getRepository('AppBundle:Shop')->find($id); //afin de récupérer le id_shop !
 		
 		if (empty($shop)) {
-            return new Response('SHOP NOT FOUND', Response::HTTP_NOT_FOUND);
+            $response = new Response('SHOP NOT FOUND', Response::HTTP_NOT_FOUND);
         } else {
-			$em->remove($shop);
-			$em->flush();
-			return new Response('SHOP DELETED', Response::HTTP_OK);
+			$url = 'url non donnée'.'/{$shop->getIdShop()}'; //je rajoute à l'url l'id_shop concerné
+
+			$ch = curl_init($url);
+			curl_setopt($ch, CURLOPT_CUSTOMREQUEST,'DELETE');
+			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+			curl_exec($ch);
+			$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+			
+			switch ($httpCode) {
+				case 200:
+					$em->remove($shop);
+					$em->flush();
+					$response = new Response('SHOP DELETED', Response::HTTP_OK);
+					break;
+				case 404:
+					$response = new Response('API NOT FOUND', Response::HTTP_NOT_FOUND);
+					break;
+				case 500:
+					$response = new Response('INTERNAL SERVER ERROR', Response::HTTP_INTERNAL_SERVER_ERROR);
+					break;
+				default:
+					$error_status = "Undocumented error: " . $httpCode . " : " . curl_error($curl);
+					break;
+			}
+			curl_close($curl);
 		}
+		return $response;
 	}
 	
 	/**
@@ -119,41 +142,30 @@ class ShopController extends FOSRestController
 		
 		switch ($httpCode) {
 			case 200:
-				$error_status = "200: Success";
-				return ($datas);
 				break;
 			case 404:
-				$error_status = "404: API Not found";
+				$response = new Response('API NOT FOUND', Response::HTTP_NOT_FOUND);
 				break;
 			case 500:
-				$error_status = "500: servers replied with an error.";
-				break;
-			case 502:
-				$error_status = "502: servers may be down or being upgraded. Hopefully they'll be OK soon!";
-				break;
-			case 503:
-				$error_status = "503: service unavailable. Hopefully they'll be OK soon!";
+				$response = new Response('INTERNAL SERVER ERROR', Response::HTTP_INTERNAL_SERVER_ERROR);
 				break;
 			default:
 				$error_status = "Undocumented error: " . $httpCode . " : " . curl_error($curl);
 				break;
 		}
 		curl_close($curl);
-		//echo $error_status;
-		//die;
 		
 		if ($httpCode < 400) {
 			// ici je récupére votre id_shop dans les datas et je ferai un merge de mon entité déjà créé.
+			//$shop->setIdShop($datas['data'][0]['objectID']);
 			$em->merge($shop);
 			$em->flush();
 			$response = new Response('SHOP CREATED', Response::HTTP_CREATED);
 		} else {
 			$em->remove($shop);
 			$em->flush();
-			$response = new Response('', Response::HTTP_INTERNAL_SERVER_ERROR);
 		}
 		return $response;
-		
     }
 	
 	/**

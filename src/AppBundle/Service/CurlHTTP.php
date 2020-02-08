@@ -38,6 +38,8 @@ class CurlHTTP
 	
 	public function curlPost(\AppBundle\Entity\Shop $shop, $url, $data = NULL, $headers = NULL)
 	{		
+		$method = 'POST';
+		
 		$ch = curl_init();
 		curl_setopt($ch, CURLOPT_URL, $url);
 		
@@ -58,21 +60,28 @@ class CurlHTTP
 			throw new \Exception($error);
 		}
 		
-		$response = $this->getHttpCode($httpCode, $request);
+		$response = $this->getHttpCode(\AppBundle\Entity\Shop $shop, $httpCode, $request, $method);
 
 		return $response;
 	}
 	
-	public function getHttpCode($httpCode, $request)
+	public function getHttpCode($httpCode, $request, $method)
     {	
+		$data = json_decode($request);
 		$response = null;
 		
 		switch ($httpCode) {
 			case 200:
-				$response = new Response('ACTION SUCCESS', Response::HTTP_OK);
+				$response = new Response('ACTION ON SHOP SUCCEED', Response::HTTP_OK);
 				break;
 			case 201:
-				$response = new Response('SHOP CREATED OR UPDATED', Response::HTTP_CREATED);
+				if ($method == 'POST') {
+						//Ici je recupérerai l'id_shop de votre base de données.
+						$shop->setIdShop($data['data'][0]['objectID']);
+						$this->entityManager->merge($shop);
+						$this->entityManager->flush();
+					}
+				$response = new Response('SHOP CREATED', Response::HTTP_CREATED);
 				break;
 			case 404:
 				$response = new Response('API NOT FOUND', Response::HTTP_NOT_FOUND);
